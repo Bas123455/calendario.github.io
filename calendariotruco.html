@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Calendario</title>
+  <style>
+    :root {
+      --bg-color: #000000;
+      --card-bg: #121212;
+      --text-main: #ffffff;
+      --text-muted: #888888;
+      --text-dim: #444444;
+      --red-accent: #e53935;
+      --green-indicator: #2e7d32;
+      --orange-dot: #ff9800;
+      --border-focus: #ffffff;
+      --input-bg: #1e1e1e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top Navigation Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px 8px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .menu-icon-wrap {
+      position: relative;
+    }
+
+    .orange-dot {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 6px;
+      height: 6px;
+      background-color: var(--orange-dot);
+      border-radius: 50%;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .badge-icon {
+      border: 1.5px solid var(--text-main);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Month Selector */
+    .month-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin: 12px 0 16px;
+    }
+
+    .month-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .nav-arrow {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* Calendar Grid */
+    .calendar-container {
+      padding: 0 16px;
+    }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .weekdays span.sunday {
+      color: var(--red-accent);
+    }
+
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      row-gap: 14px;
+    }
+
+    .day-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .day-number {
+      font-size: 15px;
+      font-weight: 600;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: border 0.15s ease;
+    }
+
+    .day-cell.outside .day-number {
+      color: var(--text-dim);
+    }
+
+    .day-cell.sunday .day-number {
+      color: var(--red-accent);
+    }
+
+    .day-cell.outside.sunday .day-number {
+      color: #522222;
+    }
+
+    /* Selected state: White box outline */
+    .day-cell.selected .day-number {
+      border: 1.5px solid var(--border-focus);
+    }
+
+    /* Event Green Line Indicator */
+    .event-indicator {
+      width: 14px;
+      height: 3px;
+      background-color: var(--green-indicator);
+      border-radius: 2px;
+      position: absolute;
+      bottom: 2px;
+    }
+
+    /* Content Area Below Grid */
+    .content-panel {
+      flex: 1;
+      padding: 24px 20px 0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .selected-date-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sticker-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 10px;
+    }
+
+    .sticker-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+
+    .sticker-hint {
+      color: var(--text-muted);
+      font-size: 13.5px;
+      text-align: center;
+    }
+
+    .event-list {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .event-item {
+      background-color: var(--card-bg);
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      font-size: 15px;
+      border-left: 3px solid var(--green-indicator);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Bottom Event Creation Bar */
+    .bottom-bar {
+      padding: 12px 16px 28px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background-color: var(--bg-color);
+    }
+
+    .input-wrapper {
+      flex: 1;
+      background-color: var(--input-bg);
+      border-radius: 24px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+    }
+
+    .event-input {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-size: 14px;
+      width: 100%;
+      outline: none;
+    }
+
+    .event-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .add-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: var(--input-bg);
+      border: none;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .add-btn:active {
+      background-color: #2a2a2a;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="menu-icon-wrap">
+      <button class="icon-btn" aria-label="Menú">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="15" y2="18"></line>
+        </svg>
+      </button>
+      <div class="orange-dot"></div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" aria-label="Buscar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+      <button class="icon-btn" id="today-badge-btn" aria-label="Ir a Hoy">
+        <div class="badge-icon" id="header-day-num">17</div>
+      </button>
+      <button class="icon-btn" aria-label="Opciones">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="5" r="1"></circle>
+          <circle cx="12" cy="12" r="1"></circle>
+          <circle cx="12" cy="19" r="1"></circle>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Month Header -->
+  <div class="month-header">
+    <button class="nav-arrow" id="prev-month">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="15 18 9 12 15 6"></polyline>
+      </svg>
+    </button>
+    <div class="month-title" id="month-display">MAYO 2027</div>
+    <button class="nav-arrow" id="next-month">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="9 18 15 12 9 6"></polyline>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Calendar Grid -->
+  <div class="calendar-container">
+    <div class="weekdays">
+      <span>LUN</span>
+      <span>MAR</span>
+      <span>MIÉ</span>
+      <span>JUE</span>
+      <span>VIE</span>
+      <span>SÁB</span>
+      <span class="sunday">DOM</span>
+    </div>
+    <div class="days-grid" id="days-grid"></div>
+  </div>
+
+  <!-- Content Panel -->
+  <div class="content-panel">
+    <div class="selected-date-title" id="selected-date-text">15 SÁB</div>
+    <div class="event-list" id="event-list"></div>
+    <div class="sticker-area" id="sticker-area">
+      <button class="sticker-btn" aria-label="Sticker">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#888888" stroke-width="1.2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+          <line x1="9" y1="9" x2="9.01" y2="9" stroke-width="2.5" stroke-linecap="round"></line>
+          <line x1="15" y1="9" x2="15.01" y2="9" stroke-width="2.5" stroke-linecap="round"></line>
+        </svg>
+      </button>
+      <p class="sticker-hint">Pulsa para añadir un sticker a este día.</p>
+    </div>
+  </div>
+
+  <!-- Bottom Input Bar -->
+  <div class="bottom-bar">
+    <div class="input-wrapper">
+      <input type="text" class="event-input" id="event-input" placeholder="Añadir evento" autocomplete="off">
+    </div>
+    <button class="add-btn" id="add-event-btn" aria-label="Añadir">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    const MONTH_NAMES = [
+      "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+      "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+    ];
+    const DAY_ABBRS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
+
+    const SUIT_MAP = {
+      'p': 'Picas',
+      'c': 'Corazones',
+      't': 'Tréboles',
+      'd': 'Diamantes'
+    };
+
+    const VALUE_MAP = {
+      'a': 'As',
+      '1': 'As',
+      '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10',
+      'j': 'Jota',
+      'q': 'Reina',
+      'k': 'Rey'
+    };
+
+    function getChileDate() {
+      const now = new Date();
+      const options = { timeZone: 'America/Santiago', year: 'numeric', month: 'numeric', day: 'numeric' };
+      const formatter = new Intl.DateTimeFormat('en-US', options);
+      const parts = formatter.formatToParts(now);
+      
+      let year, month, day;
+      for (const part of parts) {
+        if (part.type === 'year') year = parseInt(part.value);
+        if (part.type === 'month') month = parseInt(part.value) - 1;
+        if (part.type === 'day') day = parseInt(part.value);
+      }
+      return new Date(year, month, day);
+    }
+
+    const chileToday = getChileDate();
+    let currentYear = chileToday.getFullYear();
+    let currentMonth = chileToday.getMonth();
+    let selectedDate = new Date(chileToday);
+
+    const eventsStore = {};
+
+    const monthDisplay = document.getElementById('month-display');
+    const daysGrid = document.getElementById('days-grid');
+    const selectedDateText = document.getElementById('selected-date-text');
+    const eventInput = document.getElementById('event-input');
+    const addEventBtn = document.getElementById('add-event-btn');
+    const eventList = document.getElementById('event-list');
+    const stickerArea = document.getElementById('sticker-area');
+    const prevMonthBtn = document.getElementById('prev-month');
+    const nextMonthBtn = document.getElementById('next-month');
+    const todayBadgeBtn = document.getElementById('today-badge-btn');
+    const headerDayNum = document.getElementById('header-day-num');
+
+    headerDayNum.textContent = chileToday.getDate();
+
+    function formatDateKey(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function renderCalendar() {
+      monthDisplay.textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+      daysGrid.innerHTML = '';
+
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      const lastDay = new Date(currentYear, currentMonth + 1, 0);
+
+      let startDayOfWeek = firstDay.getDay() - 1;
+      if (startDayOfWeek === -1) startDayOfWeek = 6;
+
+      const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+
+      for (let i = startDayOfWeek - 1; i >= 0; i--) {
+        const dayNum = prevMonthLastDay - i;
+        const cellDate = new Date(currentYear, currentMonth - 1, dayNum);
+        daysGrid.appendChild(createDayCell(dayNum, cellDate, true));
+      }
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const cellDate = new Date(currentYear, currentMonth, day);
+        daysGrid.appendChild(createDayCell(day, cellDate, false));
+      }
+
+      const totalCells = daysGrid.children.length;
+      const remainingCells = (42 - totalCells) % 7 === 0 && totalCells >= 35 ? 0 : 35 - totalCells;
+      const extraCells = remainingCells < 0 ? 42 - totalCells : remainingCells;
+
+      for (let day = 1; day <= extraCells; day++) {
+        const cellDate = new Date(currentYear, currentMonth + 1, day);
+        daysGrid.appendChild(createDayCell(day, cellDate, true));
+      }
+    }
+
+    function createDayCell(dayNum, cellDate, isOutside) {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell';
+      if (isOutside) cell.classList.add('outside');
+      if (cellDate.getDay() === 0) cell.classList.add('sunday');
+
+      if (formatDateKey(cellDate) === formatDateKey(selectedDate)) {
+        cell.classList.add('selected');
+      }
+
+      const numSpan = document.createElement('span');
+      numSpan.className = 'day-number';
+      numSpan.textContent = dayNum;
+      cell.appendChild(numSpan);
+
+      const key = formatDateKey(cellDate);
+      if (eventsStore[key] && eventsStore[key].length > 0) {
+        const indicator = document.createElement('div');
+        indicator.className = 'event-indicator';
+        cell.appendChild(indicator);
+      }
+
+      cell.addEventListener('click', () => {
+        selectedDate = new Date(cellDate);
+        currentMonth = selectedDate.getMonth();
+        currentYear = selectedDate.getFullYear();
+        renderCalendar();
+        updateSelectedDateUI();
+      });
+
+      return cell;
+    }
+
+    function updateSelectedDateUI() {
+      const dayNum = selectedDate.getDate();
+      const dayAbbr = DAY_ABBRS[selectedDate.getDay()];
+      selectedDateText.textContent = `${dayNum} ${dayAbbr}`;
+
+      const monthAbbr = MONTH_NAMES[selectedDate.getMonth()].substring(0, 3).toLowerCase();
+      eventInput.placeholder = `Añadir evento ${dayNum} ${monthAbbr}`;
+
+      const key = formatDateKey(selectedDate);
+      const events = eventsStore[key] || [];
+
+      eventList.innerHTML = '';
+      if (events.length > 0) {
+        events.forEach(text => {
+          const item = document.createElement('div');
+          item.className = 'event-item';
+          item.textContent = text;
+          eventList.appendChild(item);
+        });
+        stickerArea.style.display = 'none';
+      } else {
+        stickerArea.style.display = 'flex';
+      }
+    }
+
+    function handleAddEvent() {
+      const text = eventInput.value.trim();
+      if (!text) return;
+
+      // 1. Guardar siempre el texto introducido en el día actual (como ejemplo visible)
+      const currentKey = formatDateKey(selectedDate);
+      if (!eventsStore[currentKey]) {
+        eventsStore[currentKey] = [];
+      }
+      eventsStore[currentKey].push(text);
+
+      // 2. Analizar si el texto contiene el código secreto de la carta
+      const lowerText = text.toLowerCase();
+      let suitChar = lowerText.slice(-1);
+      let valueChar = lowerText.slice(-2, -1);
+
+      if (lowerText.slice(-3, -1) === '10') {
+        valueChar = '10';
+        suitChar = lowerText.slice(-1);
+      }
+
+      const suit = SUIT_MAP[suitChar];
+      const value = VALUE_MAP[valueChar];
+
+      if (suit && value) {
+        // Calcular la fecha secreta (2 meses después + 7 días)
+        const targetDate = new Date(selectedDate);
+        targetDate.setMonth(targetDate.getMonth() + 2);
+        targetDate.setDate(targetDate.getDate() + 7);
+
+        const targetKey = formatDateKey(targetDate);
+        if (!eventsStore[targetKey]) {
+          eventsStore[targetKey] = [];
+        }
+
+        const predictionText = `Sabía que pensarías en la carta ${value} de ${suit}`;
+        eventsStore[targetKey].push(predictionText);
+      }
+
+      eventInput.value = '';
+      renderCalendar();
+      updateSelectedDateUI();
+    }
+
+    addEventBtn.addEventListener('click', handleAddEvent);
+    eventInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleAddEvent();
+    });
+
+    prevMonthBtn.addEventListener('click', () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar();
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      renderCalendar();
+    });
+
+    todayBadgeBtn.addEventListener('click', () => {
+      selectedDate = new Date(chileToday);
+      currentMonth = chileToday.getMonth();
+      currentYear = chileToday.getFullYear();
+      renderCalendar();
+      updateSelectedDateUI();
+    });
+
+    renderCalendar();
+    updateSelectedDateUI();
+  </script>
+</body>
+</html>
